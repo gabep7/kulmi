@@ -123,8 +123,7 @@ export default function DocumentsPage() {
     finally { setCreatingFolder(false) }
   }
 
-  const handleRename = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleRename = async () => {
     if (!renamingFolder || !renameName.trim() || !token) return
     try {
       const updated = await renameFolder(renamingFolder.id, renameName.trim(), token)
@@ -311,14 +310,14 @@ export default function DocumentsPage() {
       <Modal
         isOpen={!!renamingFolder}
         onClose={() => setRenamingFolder(null)}
-        onConfirm={handleRename as () => void}
+        onConfirm={handleRename}
         title="rename folder"
         message={
           <input
             autoFocus
             value={renameName}
             onChange={e => setRenameName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleRename(e as unknown as React.FormEvent)}
+            onKeyDown={e => e.key === 'Enter' && handleRename()}
             className="w-full border border-[#e5e5e5] px-3 py-2 text-sm outline-none focus:border-[#111111] mt-2"
           />
         }

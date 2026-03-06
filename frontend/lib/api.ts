@@ -48,6 +48,7 @@ export interface StreamEvent {
   content?: string
   session_id?: string
   message?: string
+  detail?: string
 }
 
 async function fetchAPI(

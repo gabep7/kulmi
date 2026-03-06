@@ -30,7 +30,7 @@ def build_exam_prompt(context_chunks: list[str], num_questions: int, question_ty
             "multiple-choice questions (MCQ). Each question must have 4 options (A, B, C, D) "
             "with exactly one correct answer. Indicate the correct answer at the end."
         ),
-        "short": "short-answer questions. Each answer should be answerable in 2-3 sentences.",
+        "short_answer": "short-answer questions. Each answer should be answerable in 2-3 sentences.",
         "essay": "essay questions. Each question should require a detailed, paragraph-length response.",
     }
     q_instruction = type_instructions.get(question_type, type_instructions["mcq"])

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -16,21 +17,26 @@ from services.llm import stream_llm_response, get_providers_info
 from services.rag import build_chat_prompt, build_explain_prompt, build_exam_prompt
 from utils.jwt import get_current_user
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 def _get_context(document_ids: list[int], query: str, db: Session, user_id: int) -> list[str]:
     """Gather context chunks from all specified document collections."""
     context: list[str] = []
+    logger.info("getting context for doc_ids=%s user_id=%s query='%s'", document_ids, user_id, query[:60])
     for doc_id in document_ids:
         doc = db.query(Document).filter(Document.id == doc_id, Document.user_id == user_id).first()
         if not doc or not doc.chroma_collection_id:
+            logger.warning("doc %s not found or no collection (user=%s)", doc_id, user_id)
             continue
         try:
             chunks = query_collection(doc.chroma_collection_id, query, n_results=5)
+            logger.info("doc %s → %d chunks", doc_id, len(chunks))
             context.extend(chunks)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.error("query_collection failed for doc %s: %s", doc_id, exc)
+    logger.info("total context chunks: %d", len(context))
     return context
 
 
@@ -60,6 +66,7 @@ async def stream_chat(
 ):
     # Determine document IDs: prefer request, fall back to session
     doc_ids = request.document_ids
+    logger.info("stream_chat request: doc_ids=%s session_id=%s user=%s", doc_ids, request.session_id, current_user.id)
 
     async def event_generator():
         nonlocal doc_ids

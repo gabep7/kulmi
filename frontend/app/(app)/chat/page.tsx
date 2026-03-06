@@ -99,6 +99,8 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // ref so the searchParams effect always sees the latest sessionId even if state hasn't flushed yet
+  const sessionIdRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -146,6 +148,7 @@ export default function ChatPage() {
 
     if (!urlSession) {
       // new chat — reset to setup state
+      sessionIdRef.current = undefined
       setSessionId(undefined)
       setMessages([])
       setSessionDocs([])
@@ -153,9 +156,10 @@ export default function ChatPage() {
       return
     }
 
-    if (urlSession === sessionId) return  // already loaded this session
+    if (urlSession === sessionIdRef.current) return  // already loaded this session
 
     // switching to a different session — reset and load
+    sessionIdRef.current = urlSession
     setMessages([])
     setSessionDocs([])
     setSessionId(urlSession)
@@ -261,6 +265,8 @@ export default function ChatPage() {
           })
         } else if (event.type === 'session_id' && event.session_id) {
           const newSessionId = event.session_id
+          // update the ref BEFORE router.replace so the searchParams effect skips the reload
+          sessionIdRef.current = newSessionId
           setSessionId(newSessionId)
           setSessionDocs(documents.filter((d) => selectedDocs.includes(d.id)))
           router.replace(`/chat?mode=${mode}&session_id=${newSessionId}`, { scroll: false })
@@ -271,7 +277,7 @@ export default function ChatPage() {
             const updated = [...prev]
             updated[updated.length - 1] = {
               ...updated[updated.length - 1],
-              content: `Error: ${event.message ?? 'Something went wrong.'}`,
+              content: `Error: ${event.detail ?? event.message ?? 'something went wrong.'}`,
             }
             return updated
           })
