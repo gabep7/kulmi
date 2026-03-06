@@ -258,7 +258,7 @@ export default function ChatPage() {
           setMessages((prev) => {
             const updated = [...prev]
             const last = updated[updated.length - 1]
-            if (last.role === 'assistant') {
+            if (last && last.role === 'assistant') {
               updated[updated.length - 1] = { ...last, content: last.content + event.content }
             }
             return updated
