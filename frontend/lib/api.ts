@@ -1,10 +1,17 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
 
+export interface Folder {
+  id: number
+  name: string
+  created_at: string
+}
+
 export interface Document {
   id: string
   filename: string
   original_name: string
   page_count: number
+  folder_id: number | null
   created_at: string
 }
 
@@ -96,6 +103,41 @@ export async function getDocuments(token: string): Promise<Document[]> {
   const res = await fetchAPI('/documents', {}, token)
   return res.json()
 }
+
+export async function getFolders(token: string): Promise<Folder[]> {
+  const res = await fetchAPI('/folders', {}, token)
+  return res.json()
+}
+
+export async function createFolder(name: string, token: string): Promise<Folder> {
+  const res = await fetchAPI('/folders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  }, token)
+  return res.json()
+}
+
+export async function renameFolder(id: number, name: string, token: string): Promise<Folder> {
+  const res = await fetchAPI(`/folders/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  }, token)
+  return res.json()
+}
+
+export async function deleteFolder(id: number, token: string): Promise<void> {
+  await fetchAPI(`/folders/${id}`, { method: 'DELETE' }, token)
+}
+
+export async function assignDocumentToFolder(docId: string, folderId: number | null, token: string): Promise<void> {
+  const url = folderId !== null
+    ? `/folders/assign/${docId}?folder_id=${folderId}`
+    : `/folders/assign/${docId}`
+  await fetchAPI(url, { method: 'PATCH' }, token)
+}
+
 
 export async function getChatSessions(token: string): Promise<ChatSession[]> {
   const res = await fetchAPI('/chat/sessions', {}, token)

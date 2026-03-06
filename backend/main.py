@@ -9,7 +9,7 @@ from config import settings
 from database import engine
 import models  # noqa: F401 — ensures all models are registered with Base
 from database import Base
-from routers import auth, chat, documents
+from routers import auth, chat, documents, folders
 
 app = FastAPI(title="Kulmi API")
 
@@ -23,6 +23,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
+app.include_router(folders.router, prefix="/api/folders", tags=["folders"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 
 
@@ -31,7 +32,7 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
 
-    # Add new columns to chat_sessions if they don't exist (SQLite migration)
+    # sqlite migrations — add columns/tables that didn't exist on first run
     from sqlalchemy import text, inspect
     with engine.connect() as conn:
         inspector = inspect(engine)
@@ -42,6 +43,9 @@ def on_startup():
             conn.execute(text("ALTER TABLE chat_sessions ADD COLUMN provider TEXT"))
         if 'model' not in existing_cols:
             conn.execute(text("ALTER TABLE chat_sessions ADD COLUMN model TEXT"))
+        doc_cols = [c['name'] for c in inspector.get_columns('documents')]
+        if 'folder_id' not in doc_cols:
+            conn.execute(text("ALTER TABLE documents ADD COLUMN folder_id INTEGER REFERENCES folders(id)"))
         conn.commit()
 
 

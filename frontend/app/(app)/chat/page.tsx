@@ -5,11 +5,13 @@ import { useSession } from 'next-auth/react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
   getDocuments,
+  getFolders,
   getChatMessages,
   getChatSession,
   getProviders,
   streamChat,
   Document,
+  Folder,
   ChatMessage,
 } from '@/lib/api'
 import ReactMarkdown from 'react-markdown'
@@ -79,6 +81,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [documents, setDocuments] = useState<Document[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
   const [selectedDocs, setSelectedDocs] = useState<string[]>([])
   const [sessionDocs, setSessionDocs] = useState<Document[]>([])
   const [mode, setMode] = useState<Mode>('chat')
@@ -118,10 +121,12 @@ export default function ChatPage() {
 
     Promise.all([
       getDocuments(token),
+      getFolders(token).catch(() => [] as Folder[]),
       getProviders(token).catch(() => ({} as ProviderMap)),
     ])
-      .then(([docs, providerMap]) => {
+      .then(([docs, fols, providerMap]) => {
         setDocuments(docs)
+        setFolders(fols)
         setProviders(providerMap)
 
         const configuredEntry = Object.entries(providerMap).find(([, v]) => v.configured)
@@ -309,7 +314,7 @@ export default function ChatPage() {
           <div>
             <p className="text-xs tracking-widest uppercase text-[#999999] mb-3">Documents for this chat</p>
             <p className="text-sm text-[#666666] mb-3">
-              These documents will be used as context for all messages in this session.
+              Pick individual files or select a whole folder.
             </p>
             {loadingDocs ? (
               <div className="flex justify-center py-6">
@@ -326,22 +331,48 @@ export default function ChatPage() {
                 </a>
               </div>
             ) : (
-              <div className="space-y-1.5">
-                {documents.map((doc) => (
-                  <label
-                    key={doc.id}
-                    className={`flex items-start gap-2.5 p-2 cursor-pointer transition-colors border ${
-                      selectedDocs.includes(doc.id)
-                        ? 'border-[#111111] bg-[#f5f5f5]'
-                        : 'border-transparent hover:border-[#e5e5e5]'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedDocs.includes(doc.id)}
-                      onChange={() => toggleDoc(doc.id)}
-                      className="mt-0.5 accent-[#111111]"
-                    />
+              <div className="space-y-3">
+                {/* folders first */}
+                {folders.map(folder => {
+                  const folderDocs = documents.filter(d => d.folder_id === folder.id)
+                  if (folderDocs.length === 0) return null
+                  const allSelected = folderDocs.every(d => selectedDocs.includes(d.id))
+                  const someSelected = folderDocs.some(d => selectedDocs.includes(d.id))
+                  return (
+                    <div key={folder.id} className="border border-[#e5e5e5]">
+                      <label className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer bg-[#fafafa] border-b border-[#e5e5e5] ${allSelected ? 'bg-[#f5f5f5]' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          ref={el => { if (el) el.indeterminate = someSelected && !allSelected }}
+                          onChange={() => {
+                            if (allSelected) {
+                              setSelectedDocs(prev => prev.filter(id => !folderDocs.some(d => d.id === id)))
+                            } else {
+                              setSelectedDocs(prev => [...new Set([...prev, ...folderDocs.map(d => d.id)])])
+                            }
+                          }}
+                          className="accent-[#111111]"
+                        />
+                        <span className="text-sm font-medium">{folder.name}</span>
+                        <span className="text-xs text-[#999999]">{folderDocs.length} file{folderDocs.length !== 1 ? 's' : ''}</span>
+                      </label>
+                      {folderDocs.map(doc => (
+                        <label key={doc.id} className={`flex items-start gap-2.5 px-5 py-2 cursor-pointer border-b border-[#e5e5e5] last:border-b-0 ${selectedDocs.includes(doc.id) ? 'bg-[#f5f5f5]' : 'hover:bg-[#fafafa]'}`}>
+                          <input type="checkbox" checked={selectedDocs.includes(doc.id)} onChange={() => toggleDoc(doc.id)} className="mt-0.5 accent-[#111111]" />
+                          <div className="min-w-0">
+                            <p className="text-sm text-[#111111] truncate">{doc.original_name}</p>
+                            <p className="text-xs text-[#999999]">{doc.page_count} pages</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )
+                })}
+                {/* unfiled docs */}
+                {documents.filter(d => d.folder_id === null).map(doc => (
+                  <label key={doc.id} className={`flex items-start gap-2.5 p-2 cursor-pointer border ${selectedDocs.includes(doc.id) ? 'border-[#111111] bg-[#f5f5f5]' : 'border-transparent hover:border-[#e5e5e5]'}`}>
+                    <input type="checkbox" checked={selectedDocs.includes(doc.id)} onChange={() => toggleDoc(doc.id)} className="mt-0.5 accent-[#111111]" />
                     <div className="min-w-0">
                       <p className="text-sm text-[#111111] font-medium truncate">{doc.original_name}</p>
                       <p className="text-xs text-[#999999]">{doc.page_count} pages</p>

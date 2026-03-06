@@ -10,6 +10,7 @@ class DocumentOut(BaseModel):
     filename: str
     original_name: str
     page_count: int
+    folder_id: int | None
     created_at: datetime.datetime
 
     model_config = {"from_attributes": True}

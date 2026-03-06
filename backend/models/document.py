@@ -12,8 +12,9 @@ class Document(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    filename = Column(String, nullable=False)          # stored filename on disk
-    original_name = Column(String, nullable=False)     # original upload name
+    folder_id = Column(Integer, ForeignKey("folders.id"), nullable=True, index=True)
+    filename = Column(String, nullable=False)
+    original_name = Column(String, nullable=False)
     page_count = Column(Integer, default=0)
     chroma_collection_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
