@@ -1,74 +1,45 @@
-# Kulmi 🎓 — AI Study Assistant
+# Kulmi
 
-A RAG-powered study app. Upload your PDFs (notes, past papers, books) and let AI help you understand concepts, answer questions, and generate practice exams — all running **100% locally** via Ollama.
+Upload your notes, past papers, or textbooks and use AI to actually understand them — ask questions, get explanations, generate practice exams. Chats are organised per set of documents so you can keep different subjects separate.
 
-## Prerequisites
+Supports local models via Ollama, or plug in a Groq or OpenAI API key if you'd rather not run things on your machine.
 
-- [Node.js](https://nodejs.org) ≥ 18
-- Python 3.12 (via pyenv or system)
-- [Ollama](https://ollama.com) installed and running
+## Getting started
 
-### Pull required Ollama models
+You'll need Node.js 18+, Python 3.12, and if you want local models, [Ollama](https://ollama.com) running with these two models pulled:
 
 ```bash
 ollama pull llama3
 ollama pull nomic-embed-text
 ```
 
----
-
-## Setup
-
-### Backend
+First time setup:
 
 ```bash
-cd backend
-
-# Copy and edit env
-cp .env.example .env
-
-# Activate virtual env (already created)
-source .venv/bin/activate
-
-# Start server
-uvicorn main:app --reload --port 8000
+cp backend/.env.example backend/.env
+cp frontend/.env.local.example frontend/.env.local
 ```
 
-### Frontend
+The `.env.local` file needs `NEXTAUTH_SECRET` set to any long random string — it just needs to exist. You can generate one with `openssl rand -hex 32`.
+
+If you want to use Groq (free, fast, no local GPU needed), add your key to `backend/.env`:
+
+```
+GROQ_API_KEY=your_key_here
+DEFAULT_PROVIDER=groq
+```
+
+Get a free key at [console.groq.com](https://console.groq.com).
+
+## Running
 
 ```bash
-cd frontend
-
-# Copy and edit env
-cp .env.local.example .env.local
-# Set NEXTAUTH_SECRET to any long random string
-
-npm run dev
+./dev.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
----
-
-## Features
-
-| Mode | Description |
-|------|-------------|
-| 💬 Chat | Ask questions about your uploaded documents |
-| 🧠 Explain | Get student-friendly explanations of concepts |
-| 📝 Exam | Generate MCQ, short answer, or essay practice papers |
-
-- 📄 PDF upload with automatic text extraction and embedding
-- 🔐 User accounts — each user has their own document library
-- 📱 Mobile-responsive PWA
-- 💾 Chat history saved per session
-
----
+That's it. Both the backend and frontend start together. Open [http://localhost:3000](http://localhost:3000).
 
 ## Stack
 
-- **Frontend**: Next.js 15, Tailwind CSS, NextAuth v5
-- **Backend**: FastAPI, SQLAlchemy (SQLite)
-- **AI**: Ollama (llama3 for chat, nomic-embed-text for embeddings)
-- **Vector DB**: ChromaDB (local persistence)
-- **PDF parsing**: PyMuPDF
+Next.js, FastAPI, ChromaDB, SQLite, PyMuPDF. Talks to Ollama, Groq, or OpenAI depending on what you've configured.
+
