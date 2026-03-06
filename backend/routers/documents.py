@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from pathlib import Path
 
 import fitz  # PyMuPDF — used only to count pages
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from config import settings
-from database import get_db
+from database import SessionLocal, get_db
 from models.document import Document
 from models.user import User
 from schemas.document import DocumentOut
@@ -18,6 +17,7 @@ from services.embeddings import get_chroma_client, add_document_chunks
 from services.pdf import extract_text_chunks
 from utils.jwt import get_current_user
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -27,14 +27,28 @@ def _upload_dir(user_id: int) -> Path:
     return path
 
 
+def _embed_in_background(file_path: str, collection_name: str, doc_id: int) -> None:
+    """extract chunks and embed — runs after the upload response is already sent."""
+    try:
+        chunks = extract_text_chunks(file_path)
+        if chunks:
+            add_document_chunks(collection_name, chunks, str(doc_id))
+            logger.info("embedded %d chunks for doc %s", len(chunks), doc_id)
+        else:
+            logger.warning("no chunks extracted from doc %s", doc_id)
+    except Exception as exc:
+        logger.error("embedding failed for doc %s: %s", doc_id, exc)
+
+
 @router.post("/upload", response_model=DocumentOut, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only PDF files are accepted")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="only pdf files are accepted")
 
     user_dir = _upload_dir(current_user.id)
     stored_name = f"{uuid.uuid4().hex}.pdf"
@@ -43,7 +57,7 @@ async def upload_document(
     content = await file.read()
     file_path.write_bytes(content)
 
-    # Count pages
+    # count pages
     try:
         doc_fitz = fitz.open(str(file_path))
         page_count = len(doc_fitz)
@@ -51,7 +65,6 @@ async def upload_document(
     except Exception:
         page_count = 0
 
-    # Persist DB record first to get the id
     doc_record = Document(
         user_id=current_user.id,
         filename=stored_name,
@@ -67,13 +80,8 @@ async def upload_document(
     doc_record.chroma_collection_id = collection_name
     db.commit()
 
-    # run cpu-heavy pdf parsing + embedding in a thread so we don't block the event loop
-    try:
-        chunks = await asyncio.to_thread(extract_text_chunks, str(file_path))
-        if chunks:
-            await asyncio.to_thread(add_document_chunks, collection_name, chunks, str(doc_record.id))
-    except Exception as exc:
-        logging.getLogger(__name__).warning("embedding failed for doc %s: %s", doc_record.id, exc)
+    # respond immediately — embedding happens in the background
+    background_tasks.add_task(_embed_in_background, str(file_path), collection_name, doc_record.id)
 
     return doc_record
 
@@ -91,9 +99,8 @@ def delete_document(
 ):
     doc = db.query(Document).filter(Document.id == doc_id, Document.user_id == current_user.id).first()
     if not doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="document not found")
 
-    # Remove ChromaDB collection
     if doc.chroma_collection_id:
         try:
             client = get_chroma_client()
@@ -101,7 +108,6 @@ def delete_document(
         except Exception:
             pass
 
-    # Remove file from disk
     file_path = Path(settings.upload_dir).resolve() / str(current_user.id) / doc.filename
     if file_path.exists():
         file_path.unlink()
