@@ -284,66 +284,75 @@ export default function DocumentsPage() {
       )}
 
       {/* delete doc modal */}
-      <Modal isOpen={!!deleteDocId} onClose={() => setDeleteDocId(null)} title="delete document">
-        <p className="text-sm text-[#555555] mb-6">this will permanently remove the document and its index.</p>
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => setDeleteDocId(null)}>cancel</Button>
-          <Button onClick={handleDeleteDoc} disabled={deleting}>
-            {deleting ? 'deleting...' : 'delete'}
-          </Button>
-        </div>
-      </Modal>
+      <Modal
+        isOpen={!!deleteDocId}
+        onClose={() => setDeleteDocId(null)}
+        onConfirm={handleDeleteDoc}
+        title="delete document"
+        message="this will permanently remove the document and its index."
+        confirmLabel={deleting ? 'deleting...' : 'delete'}
+        loading={deleting}
+      />
 
       {/* delete folder modal */}
-      <Modal isOpen={!!deleteFolderId} onClose={() => setDeleteFolderId(null)} title="delete folder">
-        <p className="text-sm text-[#555555] mb-6">the folder will be removed. files inside will become unfiled.</p>
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => setDeleteFolderId(null)}>cancel</Button>
-          <Button onClick={handleDeleteFolder} disabled={deleting}>
-            {deleting ? 'deleting...' : 'delete'}
-          </Button>
-        </div>
-      </Modal>
+      <Modal
+        isOpen={!!deleteFolderId}
+        onClose={() => setDeleteFolderId(null)}
+        onConfirm={handleDeleteFolder}
+        title="delete folder"
+        message="the folder will be removed. files inside will become unfiled."
+        confirmLabel={deleting ? 'deleting...' : 'delete'}
+        loading={deleting}
+      />
 
       {/* rename folder modal */}
-      <Modal isOpen={!!renamingFolder} onClose={() => setRenamingFolder(null)} title="rename folder">
-        <form onSubmit={handleRename}>
+      <Modal
+        isOpen={!!renamingFolder}
+        onClose={() => setRenamingFolder(null)}
+        onConfirm={handleRename as () => void}
+        title="rename folder"
+        message={
           <input
             autoFocus
             value={renameName}
             onChange={e => setRenameName(e.target.value)}
-            className="w-full border border-[#e5e5e5] px-3 py-2 text-sm outline-none focus:border-[#111111] mb-6"
+            onKeyDown={e => e.key === 'Enter' && handleRename(e as unknown as React.FormEvent)}
+            className="w-full border border-[#e5e5e5] px-3 py-2 text-sm outline-none focus:border-[#111111] mt-2"
           />
-          <div className="flex justify-end gap-3">
-            <Button variant="ghost" type="button" onClick={() => setRenamingFolder(null)}>cancel</Button>
-            <Button type="submit" disabled={!renameName.trim()}>save</Button>
-          </div>
-        </form>
-      </Modal>
+        }
+        confirmLabel="save"
+      />
 
       {/* move doc modal */}
-      <Modal isOpen={!!movingDoc} onClose={() => setMovingDoc(null)} title="move to folder">
-        <p className="text-sm text-[#555555] mb-4">choose a folder for <strong>{movingDoc?.original_name}</strong></p>
-        <div className="flex flex-col gap-2 mb-6">
-          {folders.map(f => (
-            <button key={f.id}
-              className={`text-left px-3 py-2 text-sm border ${movingDoc?.folder_id === f.id ? 'border-[#111111] bg-[#f5f5f5]' : 'border-[#e5e5e5] hover:border-[#111111]'}`}
-              onClick={() => handleMove(f.id)}>
-              {f.name}
-            </button>
-          ))}
-          {movingDoc?.folder_id !== null && (
-            <button
-              className="text-left px-3 py-2 text-sm border border-[#e5e5e5] hover:border-[#111111] text-[#999999]"
-              onClick={() => handleMove(null)}>
-              remove from folder (unfiled)
-            </button>
-          )}
-        </div>
-        <div className="flex justify-end">
-          <Button variant="ghost" onClick={() => setMovingDoc(null)}>cancel</Button>
-        </div>
-      </Modal>
+      <Modal
+        isOpen={!!movingDoc}
+        onClose={() => setMovingDoc(null)}
+        onConfirm={() => setMovingDoc(null)}
+        title="move to folder"
+        message={
+          <div>
+            <p className="mb-3">choose a folder for <strong>{movingDoc?.original_name}</strong></p>
+            <div className="flex flex-col gap-2">
+              {folders.map(f => (
+                <button key={f.id}
+                  className={`text-left px-3 py-2 text-sm border ${movingDoc?.folder_id === f.id ? 'border-[#111111] bg-[#f5f5f5]' : 'border-[#e5e5e5] hover:border-[#111111]'}`}
+                  onClick={() => handleMove(f.id)}>
+                  {f.name}
+                </button>
+              ))}
+              {movingDoc?.folder_id !== null && (
+                <button
+                  className="text-left px-3 py-2 text-sm border border-[#e5e5e5] hover:border-[#111111] text-[#999999]"
+                  onClick={() => handleMove(null)}>
+                  remove from folder (unfiled)
+                </button>
+              )}
+            </div>
+          </div>
+        }
+        confirmLabel="cancel"
+        variant="primary"
+      />
     </div>
   )
 }
