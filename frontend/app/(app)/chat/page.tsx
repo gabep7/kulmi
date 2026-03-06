@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import {
   getDocuments,
   getFolders,
@@ -75,7 +75,6 @@ function MessageBubble({ message, isStreaming }: { message: ChatMessage; isStrea
 export default function ChatPage() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
-  const router = useRouter()
   const token = session?.accessToken
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -265,12 +264,12 @@ export default function ChatPage() {
           })
         } else if (event.type === 'session_id' && event.session_id) {
           const newSessionId = event.session_id
-          // update the ref BEFORE router.replace so the searchParams effect skips the reload
           sessionIdRef.current = newSessionId
           setSessionId(newSessionId)
           setSessionDocs(documents.filter((d) => selectedDocs.includes(d.id)))
-          router.replace(`/chat?mode=${mode}&session_id=${newSessionId}`, { scroll: false })
-          // tell the sidebar a new session was created
+          // use history.replaceState instead of router.replace — avoids triggering the
+          // searchParams effect mid-stream which would wipe messages
+          window.history.replaceState(null, '', `/chat?mode=${mode}&session_id=${newSessionId}`)
           window.dispatchEvent(new CustomEvent('kulmi:refresh'))
         } else if (event.type === 'error') {
           setMessages((prev) => {
