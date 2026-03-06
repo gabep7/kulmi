@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import logging
 import uuid
 from pathlib import Path
 
@@ -65,15 +67,13 @@ async def upload_document(
     doc_record.chroma_collection_id = collection_name
     db.commit()
 
-    # Extract chunks and embed in background-friendly sync call
+    # run cpu-heavy pdf parsing + embedding in a thread so we don't block the event loop
     try:
-        chunks = extract_text_chunks(str(file_path))
+        chunks = await asyncio.to_thread(extract_text_chunks, str(file_path))
         if chunks:
-            add_document_chunks(collection_name, chunks, str(doc_record.id))
+            await asyncio.to_thread(add_document_chunks, collection_name, chunks, str(doc_record.id))
     except Exception as exc:
-        # Don't fail the upload — just log; embeddings can be retried
-        import logging
-        logging.getLogger(__name__).warning("Embedding failed for doc %s: %s", doc_record.id, exc)
+        logging.getLogger(__name__).warning("embedding failed for doc %s: %s", doc_record.id, exc)
 
     return doc_record
 
