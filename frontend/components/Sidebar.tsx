@@ -49,6 +49,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     fetchData()
   }, [fetchData])
 
+  // refresh whenever something elsewhere tells us to (new session, upload, delete)
+  useEffect(() => {
+    const handler = () => fetchData()
+    window.addEventListener('kulmi:refresh', handler)
+    return () => window.removeEventListener('kulmi:refresh', handler)
+  }, [fetchData])
+
   const handleUpload = async () => {
     const input = document.createElement('input')
     input.type = 'file'

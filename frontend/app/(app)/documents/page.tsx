@@ -78,6 +78,7 @@ export default function DocumentsPage() {
       setUploadProgress(100)
       setTimeout(() => setUploadProgress(0), 800)
       fetchAll()
+      window.dispatchEvent(new CustomEvent('kulmi:refresh'))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'upload failed.')
     } finally {
@@ -93,6 +94,7 @@ export default function DocumentsPage() {
     try {
       await deleteDocument(deleteDocId, token)
       setDocuments(prev => prev.filter(d => d.id !== deleteDocId))
+      window.dispatchEvent(new CustomEvent('kulmi:refresh'))
     } catch { setError('failed to delete.') }
     finally { setDeleting(false); setDeleteDocId(null) }
   }

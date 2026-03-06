@@ -111,14 +111,9 @@ export default function ChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`
   }, [input])
 
+  // load docs/folders/providers once on mount (token-bound)
   useEffect(() => {
     if (!token) return
-
-    const urlMode = searchParams.get('mode') as Mode | null
-    if (urlMode && ['chat', 'explain', 'exam'].includes(urlMode)) {
-      setMode(urlMode)
-    }
-
     Promise.all([
       getDocuments(token),
       getFolders(token).catch(() => [] as Folder[]),
@@ -128,47 +123,74 @@ export default function ChatPage() {
         setDocuments(docs)
         setFolders(fols)
         setProviders(providerMap)
-
         const configuredEntry = Object.entries(providerMap).find(([, v]) => v.configured)
         if (configuredEntry) {
           setSelectedProvider(configuredEntry[0])
           setSelectedModel(configuredEntry[1].models[0] ?? '')
         }
-
-        const docId = searchParams.get('doc')
-        if (docId && docs.some((d) => d.id === docId)) {
-          setSelectedDocs([docId])
-        }
-
-        setLoadingDocs(false)
-
-        const urlSession = searchParams.get('session_id')
-        if (urlSession) {
-          setSessionId(urlSession)
-          setLoadingMessages(true)
-          getChatSession(urlSession, token)
-            .then((s) => {
-              setMessages(s.messages)
-              const sDocObjs = s.document_ids
-                .map((numId) => docs.find((d) => d.id === String(numId)))
-                .filter((d): d is Document => d !== undefined)
-              setSessionDocs(sDocObjs)
-              if (s.provider) setSelectedProvider(s.provider)
-              if (s.model) setSelectedModel(s.model)
-            })
-            .catch(() => {
-              getChatMessages(urlSession, token)
-                .then(setMessages)
-                .catch(() => {})
-            })
-            .finally(() => setLoadingMessages(false))
-        }
       })
-      .catch(() => {
-        setLoadingDocs(false)
-      })
+      .catch(() => {})
+      .finally(() => setLoadingDocs(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
+
+  // reload session whenever the url session_id changes (sidebar navigation or page refresh)
+  useEffect(() => {
+    if (!token) return
+
+    const urlMode = searchParams.get('mode') as Mode | null
+    if (urlMode && ['chat', 'explain', 'exam'].includes(urlMode)) setMode(urlMode)
+
+    const docId = searchParams.get('doc')
+    const urlSession = searchParams.get('session_id')
+
+    if (!urlSession) {
+      // new chat — reset to setup state
+      setSessionId(undefined)
+      setMessages([])
+      setSessionDocs([])
+      setSelectedDocs(docId ? [docId] : [])
+      return
+    }
+
+    if (urlSession === sessionId) return  // already loaded this session
+
+    // switching to a different session — reset and load
+    setMessages([])
+    setSessionDocs([])
+    setSessionId(urlSession)
+    setLoadingMessages(true)
+
+    getChatSession(urlSession, token)
+      .then((s) => {
+        setMessages(s.messages)
+        if (s.provider) setSelectedProvider(s.provider)
+        if (s.model) setSelectedModel(s.model)
+        // resolve doc objects — documents may not be loaded yet, fetch inline if needed
+        const resolveFromDocs = (docs: Document[]) =>
+          s.document_ids
+            .map((numId) => docs.find((d) => d.id === String(numId)))
+            .filter((d): d is Document => d !== undefined)
+
+        setDocuments((currentDocs) => {
+          if (currentDocs.length > 0) {
+            setSessionDocs(resolveFromDocs(currentDocs))
+            return currentDocs
+          }
+          // docs not loaded yet — fetch them
+          getDocuments(token).then((docs) => {
+            setDocuments(docs)
+            setSessionDocs(resolveFromDocs(docs))
+          }).catch(() => {})
+          return currentDocs
+        })
+      })
+      .catch(() => {
+        getChatMessages(urlSession, token).then(setMessages).catch(() => {})
+      })
+      .finally(() => setLoadingMessages(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, searchParams])
 
   const toggleDoc = useCallback((id: string) => {
     setSelectedDocs((prev) =>
@@ -242,6 +264,8 @@ export default function ChatPage() {
           setSessionId(newSessionId)
           setSessionDocs(documents.filter((d) => selectedDocs.includes(d.id)))
           router.replace(`/chat?mode=${mode}&session_id=${newSessionId}`, { scroll: false })
+          // tell the sidebar a new session was created
+          window.dispatchEvent(new CustomEvent('kulmi:refresh'))
         } else if (event.type === 'error') {
           setMessages((prev) => {
             const updated = [...prev]
