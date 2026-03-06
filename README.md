@@ -1,45 +1,59 @@
-# Kulmi
+<p align="left">
+  <img src="assets/logo.svg" alt="kulmi" width="160" />
+</p>
 
-Upload your notes, past papers, or textbooks and use AI to actually understand them — ask questions, get explanations, generate practice exams. Chats are organised per set of documents so you can keep different subjects separate.
+> **kulmi** — *albanian for "the peak/summit"*
 
-Supports local models via Ollama, or plug in a Groq or OpenAI API key if you'd rather not run things on your machine.
+upload your notes, past papers, or textbooks and use ai to actually understand them. ask questions, get concepts explained, generate practice exams. chats are tied to specific documents so different subjects stay separate.
 
-## Getting started
+supports local models via ollama, or plug in a groq or openai api key if you'd rather not run things locally.
 
-You'll need Node.js 18+, Python 3.12, and if you want local models, [Ollama](https://ollama.com) running with these two models pulled:
+---
 
-```bash
-ollama pull llama3
-ollama pull nomic-embed-text
-```
+## features
 
-First time setup:
+- **chat** — ask anything about your documents
+- **explain** — get clear, student-friendly breakdowns of complex concepts
+- **exam** — generate practice papers (mcq, short answer, essay) from your material
+- **folders** — organise documents by subject or module
+- **multi-provider** — groq (free, fast), openai, or ollama for fully local inference
+
+---
+
+## getting started
+
+you'll need node.js 18+, python 3.12, and [ollama](https://ollama.com) if you want local models.
 
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.local.example frontend/.env.local
 ```
 
-The `.env.local` file needs `NEXTAUTH_SECRET` set to any long random string — it just needs to exist. You can generate one with `openssl rand -hex 32`.
+`NEXTAUTH_SECRET` in `.env.local` can be any long random string:
 
-If you want to use Groq (free, fast, no local GPU needed), add your key to `backend/.env`:
+```bash
+openssl rand -hex 32
+```
+
+for groq (free, recommended), get a key at [console.groq.com](https://console.groq.com) and add it to `backend/.env`:
 
 ```
 GROQ_API_KEY=your_key_here
 DEFAULT_PROVIDER=groq
 ```
 
-Get a free key at [console.groq.com](https://console.groq.com).
+---
 
-## Running
+## running
 
 ```bash
 ./dev.sh
 ```
 
-That's it. Both the backend and frontend start together. Open [http://localhost:3000](http://localhost:3000).
+starts both backend and frontend. open [http://localhost:3000](http://localhost:3000).
 
-## Stack
+---
 
-Next.js, FastAPI, ChromaDB, SQLite, PyMuPDF. Talks to Ollama, Groq, or OpenAI depending on what you've configured.
+## stack
 
+next.js 15 · fastapi · chromadb · sqlite · pymupdf · groq / openai / ollama

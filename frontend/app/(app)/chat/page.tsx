@@ -252,6 +252,10 @@ export default function ChatPage() {
         token
       )
 
+      // track session created during this stream so we can update the url after done
+      let pendingSessionId: string | undefined
+      let pendingMode = mode
+
       for await (const event of stream) {
         if (event.type === 'token' && event.content) {
           setMessages((prev) => {
@@ -264,13 +268,19 @@ export default function ChatPage() {
           })
         } else if (event.type === 'session_id' && event.session_id) {
           const newSessionId = event.session_id
+          pendingSessionId = newSessionId
+          pendingMode = mode
           sessionIdRef.current = newSessionId
           setSessionId(newSessionId)
           setSessionDocs(documents.filter((d) => selectedDocs.includes(d.id)))
-          // use history.replaceState instead of router.replace — avoids triggering the
-          // searchParams effect mid-stream which would wipe messages
-          window.history.replaceState(null, '', `/chat?mode=${mode}&session_id=${newSessionId}`)
+          // don't update the url yet — do it after 'done' so the searchParams effect
+          // doesn't fire mid-stream and wipe messages
           window.dispatchEvent(new CustomEvent('kulmi:refresh'))
+        } else if (event.type === 'done') {
+          // stream complete — now safe to update the url, effect won't wipe anything
+          if (pendingSessionId) {
+            window.history.replaceState(null, '', `/chat?mode=${pendingMode}&session_id=${pendingSessionId}`)
+          }
         } else if (event.type === 'error') {
           setMessages((prev) => {
             const updated = [...prev]
