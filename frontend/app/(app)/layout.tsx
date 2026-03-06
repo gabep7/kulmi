@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import Spinner from '@/components/ui/Spinner'
+import Logo from '@/components/Logo'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
@@ -35,7 +36,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="text-lg font-semibold text-[#111111]">Kulmi</span>
+          <div className="flex items-center gap-2">
+            <Logo size={18} />
+            <span className="text-base font-semibold text-[#111111]">kulmi</span>
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>

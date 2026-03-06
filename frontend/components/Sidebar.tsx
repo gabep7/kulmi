@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
+import Logo from '@/components/Logo'
 import { usePathname, useRouter } from 'next/navigation'
 import { getDocuments, getChatSessions, deleteChatSession, Document, ChatSession } from '@/lib/api'
 import Modal from '@/components/ui/Modal'
@@ -114,7 +115,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Logo */}
         <div className="px-5 py-6 border-b border-[#e5e5e5]">
           <Link href="/dashboard" onClick={onClose}>
-            <span className="text-2xl font-semibold text-[#111111] tracking-tight">Kulmi</span>
+            <div className="flex items-center gap-2.5">
+              <Logo size={22} />
+              <span className="text-xl font-semibold text-[#111111] tracking-tight">kulmi</span>
+            </div>
           </Link>
         </div>
 

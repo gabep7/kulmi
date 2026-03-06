@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+import Logo from '@/components/Logo'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -35,8 +36,11 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-10 text-center">
-        <h1 className="text-5xl font-semibold text-[#111111] tracking-tight mb-1">Kulmi</h1>
-        <p className="text-[#999999] text-sm">Your AI study companion</p>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <Logo size={32} />
+          <h1 className="text-5xl font-semibold text-[#111111] tracking-tight">kulmi</h1>
+        </div>
+        <p className="text-[#999999] text-sm">your ai study companion</p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

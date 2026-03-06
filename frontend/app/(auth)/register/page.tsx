@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { registerUser } from '@/lib/api'
+import Logo from '@/components/Logo'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -38,8 +39,11 @@ export default function RegisterPage() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-10 text-center">
-        <h1 className="text-5xl font-semibold text-[#111111] tracking-tight mb-1">Kulmi</h1>
-        <p className="text-[#999999] text-sm">Create your account</p>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <Logo size={32} />
+          <h1 className="text-5xl font-semibold text-[#111111] tracking-tight">kulmi</h1>
+        </div>
+        <p className="text-[#999999] text-sm">create your account</p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
