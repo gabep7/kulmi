@@ -173,7 +173,7 @@ export default function ChatPage() {
         // resolve doc objects — documents may not be loaded yet, fetch inline if needed
         const resolveFromDocs = (docs: Document[]) =>
           s.document_ids
-            .map((numId) => docs.find((d) => d.id === String(numId)))
+            .map((numId) => docs.find((d) => String(d.id) === String(numId)))
             .filter((d): d is Document => d !== undefined)
 
         setDocuments((currentDocs) => {
