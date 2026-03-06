@@ -12,6 +12,8 @@ import {
   Document,
   ChatMessage,
 } from '@/lib/api'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 
@@ -43,10 +45,19 @@ function MessageBubble({ message, isStreaming }: { message: ChatMessage; isStrea
         {isStreaming && message.content === '' ? (
           <TypingIndicator />
         ) : (
-          <p className="text-base whitespace-pre-wrap leading-relaxed break-words">
-            {message.content}
+          <div className="text-base leading-relaxed break-words prose prose-sm max-w-none
+            prose-headings:font-semibold prose-headings:text-[#111111]
+            prose-p:text-[#111111] prose-p:my-1
+            prose-strong:text-[#111111] prose-strong:font-semibold
+            prose-li:text-[#111111] prose-li:my-0.5
+            prose-code:bg-[#f5f5f5] prose-code:px-1 prose-code:rounded prose-code:text-sm prose-code:text-[#111111]
+            prose-pre:bg-[#f5f5f5] prose-pre:text-[#111111] prose-pre:text-sm
+            prose-blockquote:border-l-2 prose-blockquote:border-[#e5e5e5] prose-blockquote:text-[#666666]">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.content}
+            </ReactMarkdown>
             {isStreaming && <span className="animate-pulse ml-0.5 text-[#999999]">▌</span>}
-          </p>
+          </div>
         )}
         <p className="text-xs mt-1.5 text-[#999999]">
           {new Date(message.created_at).toLocaleTimeString([], {
