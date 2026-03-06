@@ -369,7 +369,7 @@ export default function ChatPage() {
                   const allSelected = folderDocs.every(d => selectedDocs.includes(d.id))
                   const someSelected = folderDocs.some(d => selectedDocs.includes(d.id))
                   return (
-                    <div key={folder.id} className="border border-[#e5e5e5]">
+                    <div key={`folder-${folder.id}`} className="border border-[#e5e5e5]">
                       <label className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer bg-[#fafafa] border-b border-[#e5e5e5] ${allSelected ? 'bg-[#f5f5f5]' : ''}`}>
                         <input
                           type="checkbox"
@@ -388,7 +388,7 @@ export default function ChatPage() {
                         <span className="text-xs text-[#999999]">{folderDocs.length} file{folderDocs.length !== 1 ? 's' : ''}</span>
                       </label>
                       {folderDocs.map(doc => (
-                        <label key={doc.id} className={`flex items-start gap-2.5 px-5 py-2 cursor-pointer border-b border-[#e5e5e5] last:border-b-0 ${selectedDocs.includes(doc.id) ? 'bg-[#f5f5f5]' : 'hover:bg-[#fafafa]'}`}>
+                        <label key={`doc-${doc.id}`} className={`flex items-start gap-2.5 px-5 py-2 cursor-pointer border-b border-[#e5e5e5] last:border-b-0 ${selectedDocs.includes(doc.id) ? 'bg-[#f5f5f5]' : 'hover:bg-[#fafafa]'}`}>
                           <input type="checkbox" checked={selectedDocs.includes(doc.id)} onChange={() => toggleDoc(doc.id)} className="mt-0.5 accent-[#111111]" />
                           <div className="min-w-0">
                             <p className="text-sm text-[#111111] truncate">{doc.original_name}</p>
@@ -401,7 +401,7 @@ export default function ChatPage() {
                 })}
                 {/* unfiled docs */}
                 {documents.filter(d => d.folder_id === null).map(doc => (
-                  <label key={doc.id} className={`flex items-start gap-2.5 p-2 cursor-pointer border ${selectedDocs.includes(doc.id) ? 'border-[#111111] bg-[#f5f5f5]' : 'border-transparent hover:border-[#e5e5e5]'}`}>
+                  <label key={`doc-${doc.id}`} className={`flex items-start gap-2.5 p-2 cursor-pointer border ${selectedDocs.includes(doc.id) ? 'border-[#111111] bg-[#f5f5f5]' : 'border-transparent hover:border-[#e5e5e5]'}`}>
                     <input type="checkbox" checked={selectedDocs.includes(doc.id)} onChange={() => toggleDoc(doc.id)} className="mt-0.5 accent-[#111111]" />
                     <div className="min-w-0">
                       <p className="text-sm text-[#111111] font-medium truncate">{doc.original_name}</p>
@@ -509,7 +509,7 @@ export default function ChatPage() {
           ) : (
             <div className="space-y-2">
               {sessionDocs.map((doc) => (
-                <div key={doc.id} className="min-w-0">
+                <div key={`session-doc-${doc.id}`} className="min-w-0">
                   <p className="text-sm text-[#111111] truncate">{doc.original_name}</p>
                   <p className="text-xs text-[#999999]">{doc.page_count} pages</p>
                 </div>
