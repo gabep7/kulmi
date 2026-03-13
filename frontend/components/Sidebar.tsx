@@ -140,6 +140,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Link href="/documents" className={navLinkClass('/documents')} onClick={onClose}>
             Documents
           </Link>
+          <Link href="/timer" className={navLinkClass('/timer')} onClick={onClose}>
+            Study Timer
+          </Link>
         </nav>
 
         <div className="flex-1 overflow-y-auto">
