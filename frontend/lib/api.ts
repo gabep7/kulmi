@@ -51,6 +51,42 @@ export interface StreamEvent {
   detail?: string
 }
 
+// Study Timer Types
+export interface StudyMethod {
+  id: string
+  name: string
+  description: string
+  focus_time: string
+  break_time: string
+  benefits: string[]
+  pros: string[]
+  cons: string[]
+  ideal_for: string[]
+}
+
+export interface StudySession {
+  id: number
+  method: string
+  started_at: string
+  ended_at: string | null
+  planned_duration: number
+  actual_duration: number | null
+  break_duration: number | null
+  status: 'active' | 'completed' | 'cancelled' | 'paused'
+  notes: string | null
+  document_ids: number[] | null
+  created_at: string
+}
+
+export interface StudyStats {
+  total_sessions: number
+  total_focus_time: number
+  total_break_time: number
+  favorite_method: string
+  sessions_this_week: number
+  sessions_today: number
+}
+
 async function fetchAPI(
   path: string,
   options: RequestInit = {},
@@ -237,4 +273,66 @@ export async function* streamChat(
       }
     }
   }
+}
+
+// Study Timer API
+
+export async function getStudyMethods(): Promise<StudyMethod[]> {
+  const res = await fetch(`${API_BASE}/timers/methods`)
+  return res.json()
+}
+
+export async function getStudyMethod(methodId: string): Promise<StudyMethod> {
+  const res = await fetch(`${API_BASE}/timers/methods/${methodId}`)
+  return res.json()
+}
+
+export async function getStudySessions(token: string, status?: string): Promise<StudySession[]> {
+  const url = status ? `/timers/sessions?status=${status}` : '/timers/sessions'
+  const res = await fetchAPI(url, {}, token)
+  return res.json()
+}
+
+export async function createStudySession(
+  data: { method: string; planned_duration: number; document_ids?: number[] },
+  token: string
+): Promise<StudySession> {
+  const res = await fetchAPI('/timers/sessions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, token)
+  return res.json()
+}
+
+export async function updateStudySession(
+  sessionId: number,
+  data: {
+    status?: string
+    actual_duration?: number
+    break_duration?: number
+    ended_at?: string
+    notes?: string
+  },
+  token: string
+): Promise<StudySession> {
+  const res = await fetchAPI(`/timers/sessions/${sessionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }, token)
+  return res.json()
+}
+
+export async function deleteStudySession(sessionId: number, token: string): Promise<void> {
+  await fetchAPI(`/timers/sessions/${sessionId}`, { method: 'DELETE' }, token)
+}
+
+export async function getActiveStudySession(token: string): Promise<StudySession | null> {
+  const res = await fetchAPI('/timers/active', {}, token)
+  if (res.status === 204) return null
+  return res.json()
+}
+
+export async function getStudyStats(token: string): Promise<StudyStats> {
+  const res = await fetchAPI('/timers/stats', {}, token)
+  return res.json()
 }
