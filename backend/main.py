@@ -9,7 +9,7 @@ from config import settings
 from database import engine
 import models  # noqa: F401 — ensures all models are registered with Base
 from database import Base
-from routers import auth, chat, documents, folders
+from routers import auth, chat, documents, folders, timers
 
 app = FastAPI(title="Kulmi API")
 
@@ -25,6 +25,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 app.include_router(folders.router, prefix="/api/folders", tags=["folders"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(timers.router, prefix="/api/timers", tags=["timers"])
 
 
 @app.on_event("startup")
